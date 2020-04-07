@@ -1,6 +1,7 @@
 <template>
   <div class="wrapper">
     <ul class="content">
+      <button @click="btnClick">按钮</button>
       <li>商品列表1</li>
       <li>商品列表2</li>
       <li>商品列表3</li>
@@ -215,16 +216,34 @@ export default {
   props:{},
   data(){
     return {
-
+      scroll:null
     }
   },
   watch:{},
   computed:{},
-  methods:{},
+  methods:{
+    btnClick(){
+      console.log("```````");
+      
+    }
+  },
   created(){
   },
   mounted(){
-     new BScroll(document.querySelector(".wrapper"),{
+    //probe侦测
+    //0和1都是不侦测实时位置
+    //2.在手指滚动的过程中侦测 在手指离开后的惯性中不侦测
+    //3.只要是滚动就侦测
+    this.scroll=new BScroll(document.querySelector(".wrapper"),{
+      probeType:3,
+      pullUpLoad:true
+    })
+    this.scroll.on("scroll",(position)=>{
+        //console.log(position);
+        
+    })
+    this.scroll.on("pullingUp",()=>{
+      console.log("上拉加载更多");
       
     })
   }

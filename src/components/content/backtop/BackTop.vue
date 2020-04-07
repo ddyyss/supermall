@@ -1,12 +1,13 @@
 <template>
-   <div id="tab-bar">
-      <slot></slot>
-    </div>
+  <div class="back-top">
+    <img src="~assets/img/common/top.png" alt="" >
+  </div>
 </template>
 
 
 <script>
 export default {
+  name:'',
   components:{},
   props:{},
   data(){
@@ -22,16 +23,13 @@ export default {
 
 </script>
 <style scoped>
- #tab-bar{
-  display: flex;
-  background-color: #f5f0f0;
+.back-top{
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  box-shadow: 0 -1px 1px rgba(100, 100, 100, 0.2);
-  
-  
+  right: 8px;
+  bottom: 55px;
 }
-
+.back-top img{
+  width: 43px;
+  height: 43px;
+}
 </style>

@@ -27,7 +27,8 @@ export default {
   },
   methods: {
     itemClick(index){
-      this.currentIndex=index;
+      //在home.vue中已经设置了
+      //this.currentIndex=index;
       this.$emit("tabClick",index)
     }
   },

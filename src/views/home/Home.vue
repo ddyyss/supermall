@@ -1,56 +1,20 @@
 <template>
-  <div id="home">
+  <div id="home" class="wrapper">
       <nav-bar class="home-nav">
         <div slot="center" >购物街</div>
       </nav-bar>
-      <home-swiper :banners="banners"></home-swiper>
-      <recommend-view :recommends="recommends" ></recommend-view>
-      <feature-view></feature-view>
-      <tab-control class="tabControl" :titles="['流行','新款','精选']" @tabClick="tabClick"></tab-control>
-      <goods-list :goods="showGoods"></goods-list>
+      <tab-control  :titles="['流行','新款','精选']" @tabClick="tabClick" ref="tabControl1" class="fixed" v-show="isFixedShow"></tab-control>
+     <scroll class="content" ref="scroll" :probe-type="3" @scroll="contentScroll"
+              :pull-up-load="true" @pullingUp="loadMore">
+        <home-swiper :banners="banners" @swiperImageLoad="swiperImageLoad"></home-swiper>
+        <recommend-view :recommends="recommends" ></recommend-view>
+        <feature-view></feature-view>
+        <tab-control  :titles="['流行','新款','精选']" @tabClick="tabClick" ref="tabControl2"></tab-control>
+        <goods-list :goods="showGoods"></goods-list>
+     </scroll>
+     <back-top @click.native="backClick" v-show="isShow"></back-top>
 
-      <ul>
-        <li>列表1</li>
-        <li>列表2</li>
-        <li>列表3</li>
-        <li>列表4</li>
-        <li>列表5</li>
-        <li>列表6</li>
-        <li>列表7</li>
-        <li>列表8</li>
-        <li>列表9</li>
-        <li>列表10</li>
-        <li>列表1</li>
-        <li>列表2</li>
-        <li>列表3</li>
-        <li>列表4</li>
-        <li>列表5</li>
-        <li>列表6</li>
-        <li>列表7</li>
-        <li>列表8</li>
-        <li>列表9</li>
-        <li>列表10</li>
-        <li>列表1</li>
-        <li>列表2</li>
-        <li>列表3</li>
-        <li>列表4</li>
-        <li>列表5</li>
-        <li>列表6</li>
-        <li>列表7</li>
-        <li>列表8</li>
-        <li>列表9</li>
-        <li>列表10</li>
-        <li>列表1</li>
-        <li>列表2</li>
-        <li>列表3</li>
-        <li>列表4</li>
-        <li>列表5</li>
-        <li>列表6</li>
-        <li>列表7</li>
-        <li>列表8</li>
-        <li>列表9</li>
-        <li>列表10</li>
-      </ul>
+     
   </div>
 </template>
 
@@ -60,6 +24,8 @@
 import NavBar from 'components/common/navbar/NavBar'
 import TabControl from 'components/content/tabControl/TabControl'
 import GoodsList from 'components/content/goods/GoodsList'
+import Scroll from 'components/common/scroll/Scroll'
+import BackTop from 'components/content/backtop/BackTop'
 
 //子组件
 import HomeSwiper from './childComps/HomeSiper'
@@ -68,6 +34,8 @@ import FeatureView from './childComps/FeatureView'
 
 
 import {getHomeMultidata,getHomeGoods} from 'network/home'
+import {debounce} from '../../common/utils'
+
 
 
 
@@ -79,7 +47,9 @@ export default {
     GoodsList,
     HomeSwiper,
     RecommendView,
-    FeatureView
+    FeatureView,
+    Scroll,
+    BackTop
     
   },
   props:{},
@@ -92,7 +62,11 @@ export default {
         "new":{page:0,list:[]},
         "sell":{page:0,list:[]}
       },
-      currentTpye:"pop"
+      currentTpye:"pop",
+      isShow:false,
+      tabOffsetTop:0,
+      isFixedShow:false,
+      saveY:0
     }
   },
   watch:{},
@@ -109,6 +83,8 @@ export default {
     this.getHomeGoods('pop');
     this.getHomeGoods('new');
     this.getHomeGoods('sell');
+
+    
   },
   methods:{
     /* 网络请求相关的方法 */
@@ -125,7 +101,8 @@ export default {
         this.goods[type].list.push(...res.data.list)
         this.goods[type].page+=1;
       
-      
+      //完成上啦加载更多
+        this.$refs.scroll.finishPullUp();
     })},
     /* 事件监听相关的方法 */
     tabClick(index){
@@ -142,30 +119,89 @@ export default {
       } */
       this.currentTpye=Object.keys(this.goods)[index];
       //console.log(Object.keys(this.goods));// ["pop", "new", "sell"]
-      
+      this.$refs.tabControl1.currentIndex=index;
+      this.$refs.tabControl2.currentIndex=index;
+    },
+    backClick(){
+      //回到顶部
+      this.$refs.scroll.scrollTo(0,0)
+    },
+    //回到顶部按钮的显示和隐藏
+    contentScroll(position){
+      //console.log(position);
+      /* if(-position.y>800){
+        this.isShow=true
+      } */
+      this.isShow = -position.y > 800
+      this.isFixedShow= -position.y >538
+    },
+    //底部加载更多
+    loadMore(){
+      this.getHomeGoods(this.currentTpye)  
+    },
+    swiperImageLoad(){
+      //获取tabControl的offsetTop
+    //所有的组件都有一个属性$el 用户获取组件中的元素
+      //console.log(this.$refs.tabControl.$el.offsetTop);
+      this.tabOffsetTop=this.$refs.tabControl2.$el.offsetTop;
     }
     
   },
-  mounted(){}
+  mounted(){
+    const refresh=debounce(this.$refs.scroll.refresh,100)
+    //监听item图片加载完成
+    this.$bus.$on("itemImageLoad",()=>{
+      //加载完成后重新刷新 bscroll的高度 
+      refresh()
+    })
+  },
+  activated() {
+    this.$refs.scroll.refresh();
+    this.$refs.scroll.scrollTo(0,this.saveY,0)
+  },
+  deactivated() {
+    
+    
+    this.saveY=this.$refs.scroll.scroll.y;
+  },
 }
 
 </script>
+
 <style scoped>
+/* scoped  表示只对当前组件起效果 */
 #home{
-  padding-top: 44px;
+  
+  height: 100vh;
+  position: relative;
+ 
 }
 .home-nav{
   background-color: var(--color-tint);
   color: white;
-  position: fixed;
+  /* 原生滚动的时候为了让导航在最上面 但是现在是 bs 滚动  原生的不会滚动 */
+  /* position: fixed;
   left: 0;
   right: 0;
   top: 0;
-  z-index: 9;
+  z-index: 9; */
 }
-.tabControl{
-  position: sticky;
+
+.content{
+  position: absolute;
+  overflow: hidden;
   top: 44px;
+  bottom: 49px;
+  left: 0;
+  right: 0;
+}
+.fixed{
+  position: relative;
   z-index: 9;
 }
+/* .content{
+  height: calc(100% - 93px);
+  overflow: hidden;
+  margin-top: 44px;
+} */
 </style>

@@ -1,6 +1,6 @@
 <template>
-  <div class="goods-item">
-    <img :src="goodsItem.show.img" alt="">
+  <div class="goods-item" @click="itemClick">
+    <img :src="goodsItem.show.img" alt="" @load="imageLoad"><!--  @load 监听图片加载完成 -->
     <div class="goods-info">
       <p>{{goodsItem.title}}</p>
       <span class="price">￥{{goodsItem.prcie}}</span>
@@ -28,7 +28,18 @@ export default {
   },
   watch:{},
   computed:{},
-  methods:{},
+  methods:{
+    //原生js监听图片加载完 img.onload=function(){}
+    //vue 监听图片加载完  @load =xxx
+    //$bus事件总线 this.$bus.$emit发射  this.$bus.on监听到
+    imageLoad(){
+      this.$bus.$emit('itemImageLoad')
+    },
+    itemClick(){
+      
+      this.$router.push('/detail/'+this.goodsItem.iid)
+    }
+  },
   created(){},
   mounted(){}
 }
