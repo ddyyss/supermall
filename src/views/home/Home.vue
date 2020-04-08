@@ -35,6 +35,7 @@ import FeatureView from './childComps/FeatureView'
 
 import {getHomeMultidata,getHomeGoods} from 'network/home'
 import {debounce} from '../../common/utils'
+import {itemListenerMixin} from '../../common/mixin'
 
 
 
@@ -53,6 +54,7 @@ export default {
     
   },
   props:{},
+  mixins:[itemListenerMixin],
   data(){
     return {
       banners:[],
@@ -66,7 +68,8 @@ export default {
       isShow:false,
       tabOffsetTop:0,
       isFixedShow:false,
-      saveY:0
+      saveY:0,
+      
     }
   },
   watch:{},
@@ -148,21 +151,24 @@ export default {
     
   },
   mounted(){
-    const refresh=debounce(this.$refs.scroll.refresh,100)
-    //监听item图片加载完成
-    this.$bus.$on("itemImageLoad",()=>{
+    //用mixin混入
+   /*  //监听item图片加载完成
+    const refresh=debounce(this.$refs.scroll.refresh,5)
+    
+    //保存监听事件
+    this.itemimageListener=()=>{
       //加载完成后重新刷新 bscroll的高度 
       refresh()
-    })
+    }
+    this.$bus.$on("itemImageLoad",this.itemimageListener) */
   },
   activated() {
     this.$refs.scroll.refresh();
     this.$refs.scroll.scrollTo(0,this.saveY,0)
   },
   deactivated() {
-    
-    
     this.saveY=this.$refs.scroll.scroll.y;
+    this.$bus.$off("itemImageLoad",this.itemimageListener)
   },
 }
 
