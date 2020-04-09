@@ -1,15 +1,18 @@
 <template>
   <div id="detail">
-    <detail-nav-bar class="detail-nav"></detail-nav-bar>
-    <scroll class="content" ref="scroll">
+    <detail-nav-bar class="detail-nav" @titleClick="titleIndex" ref="nav" ></detail-nav-bar>
+    <scroll class="content" ref="scroll" :probeType="3" @scroll="contentScroll">
       <detail-swiper :top-images="topImages"></detail-swiper>
       <detail-base-info :goods="goods"></detail-base-info>
       <detail-shop-info :shop="shop"></detail-shop-info>
-      <detail-goods-info :detailInfo="detailInfo" ></detail-goods-info>
-      <detail-param-info :paramInfo="paramInfo"></detail-param-info>
-      <detail-comment-info :commentInfo="commentInfo"></detail-comment-info>
-      <goods-list :goods="recommend"></goods-list>
+      <detail-goods-info :detailInfo="detailInfo" @goodsimgload="goodsimgLoad"></detail-goods-info>
+      <detail-param-info :paramInfo="paramInfo" ref="params"></detail-param-info>
+      <detail-comment-info :commentInfo="commentInfo" ref="comments"></detail-comment-info>
+      <goods-list :goods="recommend" ref="goods"></goods-list>
     </scroll>
+    <detail-bottom-bar class="bottom-bar" @addCart="addToCart"></detail-bottom-bar>
+
+    <back-top @click.native="backClick" v-show="isShow"></back-top>
   </div>
 </template>
 
@@ -26,7 +29,10 @@ import {debounce} from '../../common/utils'
 import DetailParamInfo from './childComps/DetailParamInfo'
 import DetailCommentInfo from './childComps/DetailCommentInfo'
 import GoodsList from 'components/content/goods/GoodsList'
-import {itemListenerMixin} from '../../common/mixin'
+import {itemListenerMixin,backTopMixin} from '../../common/mixin'
+import DetailBottomBar from './childComps/DetailBottomBar'
+
+
 
 export default {
   name:'Detail',
@@ -39,10 +45,12 @@ export default {
     DetailGoodsInfo,
     DetailParamInfo,
     DetailCommentInfo,
-    GoodsList
+    GoodsList,
+    DetailBottomBar,
+  
   },
   props:{},
-  mixins:[itemListenerMixin],
+  mixins:[itemListenerMixin,backTopMixin],
   data(){
     return {
       iid:null,
@@ -53,6 +61,10 @@ export default {
       paramInfo:{},
       commentInfo:{},
       recommend:[],
+      themeTopY:[],
+      getthemeTopY:null,
+      currentIndex:0,
+      isShow:false,
       
       
       
@@ -63,10 +75,59 @@ export default {
     
   },
   methods:{  
-   /* goodsimgLoad(){
-     debounce(this.$refs.scroll.refresh,200)();
-     //this.$refs.scroll.refresh();
-   } */
+   goodsimgLoad(){  
+     //用的是mixin中的this.newrefresh()
+      this.newrefresh();
+      //在图片加载完成后获取offsetTop
+      this.getthemeTopY();
+   },
+   titleIndex(index){
+     this.$refs.scroll.scrollTo(0,-this.themeTopY[index],200)
+   },
+   //监听实时滚动的位置
+   contentScroll(position){
+     //获取Y值
+     const positionY=-position.y
+     //对比获取currentIndex
+     let length=this.themeTopY.length
+     //第一种
+     /* this.themeTopY.forEach((value,index) => {
+       if(this.currentIndex !==index &&((index<length-1 && positionY>=this.themeTopY[index]&& positionY < this.themeTopY[index+1] ) || 
+       (index===length-1 && positionY>=this.themeTopY[index]))){
+         this.currentIndex=index;
+        this.$refs.nav.currentIndex=this.currentIndex
+          
+       }
+     }); */
+     //第二种  
+     //先在this.themeTopY 的最后以为加一个最大值 Number.MAX_VALUE
+      for(let i =0;i<length-1;i++){
+          if(this.currentIndex !== i &&(positionY>=this.themeTopY[i] && positionY < this.themeTopY[i+1])){
+          this.currentIndex=i;
+          this.$refs.nav.currentIndex=this.currentIndex
+          }
+      }
+      //是否显示回到顶部
+      this.listenerShow(position);
+    
+   },
+   addToCart(){
+      //获取购物车需要展示的信息
+      const product={};
+      product.image=this.topImages[0];
+      product.title=this.goods.title;
+      product.desc=this.goods.desc;
+      product.price=this.goods.realPrice;
+      product.iid=this.iid;
+      
+
+      //将商品加入购物车
+      //mutations 传入mutations中
+      //this.$store.commit("addCart",product)
+      //actions 传入actions中
+      this.$store.dispatch("addCart",product)
+   }
+    
   },
   created(){
     //保存传入的iid
@@ -89,16 +150,44 @@ export default {
       if(data.cRate !==0){
         this.commentInfo=data.rate.list[0]
       }
+
+      //第一次 this.$refs.params.$el 没有渲染根本取不到值
+        /* this.themeTopY=[]
+      this.themeTopY.push(0)
+      this.themeTopY.push(this.$refs.params.$el.offsetTop)
+      this.themeTopY.push(this.$refs.comments.$el.offsetTop)
+      this.themeTopY.push(this.$refs.goods.$el.offsetTop)
+      console.log(this.themeTopY); */
+
+      //第二次 值不对的原因
+      //根据最新的数据，对应的DOM是已经呗渲染出来了
+      //但是图片还没有呗加载完（目前取到的offsetTop不包含其中的图片）
+      //offsetTop值不对的时候 因为图片的问题
+      /* this.$nextTick(()=>{
+      this.themeTopY=[]
+      this.themeTopY.push(0)
+      this.themeTopY.push(this.$refs.params.$el.offsetTop)
+      this.themeTopY.push(this.$refs.comments.$el.offsetTop)
+      this.themeTopY.push(this.$refs.goods.$el.offsetTop)
+      console.log(this.themeTopY);
+      }) */
+      
     })
     //获取详情页
     getRecommend().then(res=>{
-     
-      
       this.recommend=res.data.list
        //console.log(this.recommend);
     })
-    
-    
+    //图片加载完成后执行获取数据函数
+    this.getthemeTopY=debounce(()=>{
+      this.themeTopY=[]
+      this.themeTopY.push(0)
+      this.themeTopY.push(this.$refs.params.$el.offsetTop)
+      this.themeTopY.push(this.$refs.comments.$el.offsetTop)
+      this.themeTopY.push(this.$refs.goods.$el.offsetTop)
+      this.themeTopY.push(Number.MAX_VALUE)
+      //console.log(this.themeTopY); 
+    },100)
   },
   mounted(){
    /* const newrefresh=debounce(this.$refs.scroll.refresh,100)
@@ -107,11 +196,19 @@ export default {
       newrefresh();
     } */
     //加载完成后重新刷新 bscroll的高度 
-    this.$bus.$on("goodsimgLoad",this.itemimageListener)
-    console.log("---");
-    
+    //this.$bus.$on("goodsimgLoad",this.itemimageListener)
     //这个用mixin混入 因为用的地方很多
     //this.$bus.$on("itemImageLoad",this.itemimageListener)
+    
+  },
+  updated() {
+     /*  this.themeTopY=[]
+      this.themeTopY.push(0)
+      this.themeTopY.push(this.$refs.params.$el.offsetTop)
+      this.themeTopY.push(this.$refs.comments.$el.offsetTop)
+      this.themeTopY.push(this.$refs.goods.$el.offsetTop)
+      console.log(this.themeTopY); */
+      
   },
   deactivated() {
     //this.$bus.$off()
@@ -131,10 +228,12 @@ export default {
 }
 .detail-nav{
   position: relative;
+  height: 44px;
   z-index: 9;
   background-color: #fff;
 }
 .content{
-  height: calc(100% - 44px);
+  height: calc(100% - 44px - 49px);
+  position: relative;
 }
 </style>

@@ -25,7 +25,7 @@ import NavBar from 'components/common/navbar/NavBar'
 import TabControl from 'components/content/tabControl/TabControl'
 import GoodsList from 'components/content/goods/GoodsList'
 import Scroll from 'components/common/scroll/Scroll'
-import BackTop from 'components/content/backtop/BackTop'
+
 
 //子组件
 import HomeSwiper from './childComps/HomeSiper'
@@ -35,7 +35,7 @@ import FeatureView from './childComps/FeatureView'
 
 import {getHomeMultidata,getHomeGoods} from 'network/home'
 import {debounce} from '../../common/utils'
-import {itemListenerMixin} from '../../common/mixin'
+import {itemListenerMixin,backTopMixin} from '../../common/mixin'
 
 
 
@@ -50,11 +50,11 @@ export default {
     RecommendView,
     FeatureView,
     Scroll,
-    BackTop
+    
     
   },
   props:{},
-  mixins:[itemListenerMixin],
+  mixins:[itemListenerMixin,backTopMixin],
   data(){
     return {
       banners:[],
@@ -65,7 +65,6 @@ export default {
         "sell":{page:0,list:[]}
       },
       currentTpye:"pop",
-      isShow:false,
       tabOffsetTop:0,
       isFixedShow:false,
       saveY:0,
@@ -125,19 +124,17 @@ export default {
       this.$refs.tabControl1.currentIndex=index;
       this.$refs.tabControl2.currentIndex=index;
     },
-    backClick(){
-      //回到顶部
-      this.$refs.scroll.scrollTo(0,0)
-    },
+    
     //回到顶部按钮的显示和隐藏
     contentScroll(position){
       //console.log(position);
       /* if(-position.y>800){
         this.isShow=true
       } */
-      this.isShow = -position.y > 800
+      this.listenerShow(position)
       this.isFixedShow= -position.y >538
     },
+
     //底部加载更多
     loadMore(){
       this.getHomeGoods(this.currentTpye)  

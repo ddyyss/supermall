@@ -36,7 +36,7 @@
           /* if(++this.counter === this.imagesLength){
             this.$emit("goodsimgLoad")
           }  */
-          this.$bus.$emit("goodsimgLoad")
+          this.$emit("goodsimgload")
           //this.$emit("goodsimgload")
         }
     },
