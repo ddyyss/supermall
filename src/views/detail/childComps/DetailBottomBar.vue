@@ -48,8 +48,6 @@ export default {
     height: 49px;
     position: relative;
     background-color: #fff;
-    
-    
 
     display: flex;
     text-align: center;

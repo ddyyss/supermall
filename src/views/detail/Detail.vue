@@ -13,6 +13,7 @@
     <detail-bottom-bar class="bottom-bar" @addCart="addToCart"></detail-bottom-bar>
 
     <back-top @click.native="backClick" v-show="isShow"></back-top>
+    <!-- <toast :message="message" :show="show"></toast> -->
   </div>
 </template>
 
@@ -31,6 +32,9 @@ import DetailCommentInfo from './childComps/DetailCommentInfo'
 import GoodsList from 'components/content/goods/GoodsList'
 import {itemListenerMixin,backTopMixin} from '../../common/mixin'
 import DetailBottomBar from './childComps/DetailBottomBar'
+import { mapActions } from 'vuex'
+
+//import Toast from 'components/common/toast/Toast'
 
 
 
@@ -47,6 +51,7 @@ export default {
     DetailCommentInfo,
     GoodsList,
     DetailBottomBar,
+    
   
   },
   props:{},
@@ -65,6 +70,8 @@ export default {
       getthemeTopY:null,
       currentIndex:0,
       isShow:false,
+      /* message:"哈哈哈",
+      show:false */
       
       
       
@@ -75,6 +82,7 @@ export default {
     
   },
   methods:{  
+  ...mapActions(['addCart']),
    goodsimgLoad(){  
      //用的是mixin中的this.newrefresh()
       this.newrefresh();
@@ -121,11 +129,26 @@ export default {
       product.iid=this.iid;
       
 
-      //将商品加入购物车
+      //将商品加入购物车 并且返回添加成功 1.Pormise 2.mapActions
       //mutations 传入mutations中
       //this.$store.commit("addCart",product)
       //actions 传入actions中
-      this.$store.dispatch("addCart",product)
+      //第一种
+      /* this.$store.dispatch("addCart",product).then(res=>{
+        console.log(res);
+        
+      }) */
+      //第二种
+      //用mapActions  ---79行
+      this.addCart(product).then(res=>{
+        /* this.show=true;
+        this.message=res;
+        setTimeout(()=>{
+          this.show=false;
+          this.message=""
+        },1500) */
+        this.$toast.show(res,1500)
+      })
    }
     
   },

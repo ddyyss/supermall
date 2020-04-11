@@ -1,7 +1,7 @@
 <template>
     <div id="shop-item">
     <div class="item-selector">
-      <CheckButton ></CheckButton>
+      <CheckButton :isActive="itemInfo.isChecked" @click.native="checkClick"></CheckButton>
     </div>
     <div class="item-img">
       <img :src="itemInfo.image" alt="商品图片">
@@ -11,7 +11,11 @@
       <div class="item-desc">商品描述: {{itemInfo.desc}}</div>
       <div class="info-bottom">
         <div class="item-price left">¥{{itemInfo.price}}</div>
-        <div class="item-count right">x{{itemInfo.count}}</div>
+
+        <div class="item-count right">
+          <div class="delete" @click="deleteItem">一</div>
+          <div>x{{itemInfo.count}}</div>
+        </div>
       </div>
     </div>
   </div>
@@ -39,7 +43,15 @@ export default {
   },
   watch:{},
   computed:{},
-  methods:{},
+  methods:{
+    checkClick(){
+      this.itemInfo.isChecked=!this.itemInfo.isChecked
+    },
+    deleteItem(){
+      this.$emit("deleteItem",this.itemInfo.iid)
+      } 
+    
+  },
   created(){},
   mounted(){}
 }
@@ -103,5 +115,18 @@ export default {
 
   .info-bottom .item-price {
     color: orangered;
+  }
+  .item-count{
+    display: flex;
+   
+  }
+  .delete{
+    margin-right: 10px;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    background-color: #fff;
+    border-radius: 50%;
+    border: 1px solid black;
   }
 </style>
